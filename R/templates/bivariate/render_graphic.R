@@ -11,18 +11,18 @@
 
 # Install {rchelsa} from GitHub (required for CHELSA data access)
 # Uses {remotes} since the package is not on CRAN
-if (!requireNamespace("rchelsa", quietly = TRUE)) {
+if(!requireNamespace("rchelsa", quietly = TRUE)) {
   if (!requireNamespace("remotes", quietly = TRUE)) {
     install.packages("remotes")
   }
   remotes::install_github("inSileco/rchelsa");
+  library(rchelsa)
 }
 
-library(rchelsa)
-
 # Ensure {pacman} is available for streamlined package management
-if (!requireNamespace("pacman", quietly = TRUE)) {
-  install.packages("pacman")
+if(!requireNamespace("pacman", quietly = TRUE)) {
+  install.packages("pacman");
+  library(pacman)
 }
 
 # Install (if needed) and load all required packages
@@ -43,7 +43,7 @@ chelsa <- "bioclim"
 
 data_dir <- "data/{chelsa}/"
 
-if (!dir.exists(glue::glue(data_dir))) {
+if(!dir.exists(glue::glue(data_dir))) {
   dir.create(glue::glue(data_dir))
 }
 
@@ -109,7 +109,7 @@ iso3 <- "MWI"  # Example: Malawi (replace as needed)
 boundary_dir <- file.path("data", "boundaries", iso3)
 
 # Create directory if it doesn't exist
-if (!dir.exists(boundary_dir)) {
+if(!dir.exists(boundary_dir)) {
   dir.create(boundary_dir, recursive = TRUE)
 }
 
@@ -416,7 +416,7 @@ saveRDS(
 {
   # Validate output path by writing a temporary test image
   # Ensures that directory structure exists and is writable
-  if (!file.exists(outfile)) {
+  if(!file.exists(outfile)) {
     png::writePNG(matrix(1), outfile)
   }
   
