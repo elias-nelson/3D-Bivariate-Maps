@@ -11,18 +11,16 @@
 
 # Install {rchelsa} from GitHub (required for CHELSA data access)
 # Uses {remotes} since the package is not on CRAN
-if(!requireNamespace("rchelsa", quietly = TRUE)) {
+if (!requireNamespace("rchelsa", quietly = TRUE)) {
   if (!requireNamespace("remotes", quietly = TRUE)) {
     install.packages("remotes")
   }
-  remotes::install_github("inSileco/rchelsa");
-  library(rchelsa)
+  remotes::install_github("inSileco/rchelsa")
 }
 
 # Ensure {pacman} is available for streamlined package management
-if(!requireNamespace("pacman", quietly = TRUE)) {
-  install.packages("pacman");
-  library(pacman)
+if (!requireNamespace("pacman", quietly = TRUE)) {
+  install.packages("pacman")
 }
 
 # Install (if needed) and load all required packages
@@ -34,17 +32,34 @@ pacman::p_load(
 )
 
 # ii. CHELSA Climate Data Acquisition and Preparation
-# -----------------------------------------------------
-# This section downloads bioclimatic variables from the CHELSA database,
-# reads them into R, and prepares a stacked raster for analysis.
+#-------------------------------------------------------------------------------
+# Download and prepare CHELSA bioclimatic variables for climate mapping.
+#
+# CHELSA provides high-resolution climatologies and bioclimatic variables
+# derived from statistical downscaling of global climate data.
+#
+# This section:
+#   1. Creates a local data directory.
+#   2. Downloads selected bioclimatic variables (if not already present).
+#   3. Reads the rasters into R.
+#   4. Applies any required rescaling.
+#   5. Combines variables into a multi-layer raster stack.
+#
+# Selected variables:
+#   BIO1  = Annual Mean Temperature (°C × 10)
+#   BIO12 = Annual Precipitation (mm year⁻¹)
+#
+# The workflow is designed to be rerunnable without repeatedly downloading
+# files that already exist locally.
+#-------------------------------------------------------------------------------
 
 # Define the directory where downloaded data will be stored
 chelsa <- "bioclim"
 
-data_dir <- "data/{chelsa}/"
+climate_dir <- "data/{chelsa}/"
 
-if(!dir.exists(glue::glue(data_dir))) {
-  dir.create(glue::glue(data_dir))
+if (!dir.exists(glue::glue(climate_dir))) {
+  dir.create(glue::glue(climate_dir))
 }
 
 # Specify CHELSA bioclimatic variable IDs:
@@ -53,34 +68,79 @@ if(!dir.exists(glue::glue(data_dir))) {
 ids <- c(1, 12)
 
 # Define a helper function to download CHELSA data for a given variable ID
+# Download a CHELSA variable only if it is not already present
 # Arguments:
 #   id   - CHELSA bioclimatic variable ID
 #   path - directory where files will be saved
+
+# download_chelsa_data <- function(id, path) {
+#   rchelsa::get_chelsea_data(
+#     categ = "clim",   # Climate data category
+#     type  = "bio",    # Bioclimatic variables
+#     id    = id,       # Variable ID (BIO1, BIO12, etc.)
+#     path  = path      # Output directory
+#   )
+# }
+
 download_chelsa_data <- function(id, path) {
-  rchelsa::get_chelsea_data(
-    categ = "clim",   # Climate data category
-    type  = "bio",    # Bioclimatic variables
-    id    = id,       # Variable ID (BIO1, BIO12, etc.)
-    path  = path      # Output directory
+  
+  expected_file <- file.path(
+    path,
+    sprintf("CHELSA_bio10_%02d.tif", id)
   )
+  
+  if (file.exists(expected_file)) {
+    
+    message(
+      sprintf(
+        "BIO%d already exists. Skipping download.",
+        id
+      )
+    )
+    
+  } else {
+    
+    message(
+      sprintf(
+        "Downloading BIO%d ...",
+        id
+      )
+    )
+    
+    rchelsa::get_chelsea_data(
+      categ = "clim",    # Climate data category
+      type  = "bio",     # Bioclimatic variables
+      id    = id,        # Variable ID (BIO1, BIO12, etc.)
+      path  = path       # Output directory
+    )
+    
+  }
 }
 
+
 # Download selected CHELSA variables into the specified directory
-lapply(ids, download_chelsa_data, path = data_dir)
+invisible(
+  lapply(
+    ids,
+    download_chelsa_data,
+    path = climate_dir
+  )
+)
 
 # List downloaded files to verify successful download
 list.files(
   glue::glue(data_dir)
 )
 
-# Read downloaded raster files using terra
+# Read downloaded climate raster files using terra
 # BIO1: Annual Mean Temperature
-temp <- terra::rast(paste0(glue::glue(data_dir), "CHELSA_bio10_01.tif"))
+temp <- terra::rast(paste0(glue::glue(climate_dir), "CHELSA_bio10_01.tif"))
 
 # BIO12: Annual Precipitation
-prec <- terra::rast(paste0(glue::glue(data_dir), "CHELSA_bio10_12.tif"))
+prec <- terra::rast(paste0(glue::glue(climate_dir), "CHELSA_bio10_12.tif"))
 
-# Temperature is stored as stored as °C × 10 which needs rescaling
+# Annual mean temperature is stored as °C × 10, needs rescaling
+# Convert to degrees Celsius
 temp_rescaled <- temp / 10
 
 # Combine temperature and precipitation into a multi-layer raster stack
@@ -109,7 +169,7 @@ iso3 <- "MWI"  # Example: Malawi (replace as needed)
 boundary_dir <- file.path("data", "boundaries", iso3)
 
 # Create directory if it doesn't exist
-if(!dir.exists(boundary_dir)) {
+if (!dir.exists(boundary_dir)) {
   dir.create(boundary_dir, recursive = TRUE)
 }
 
@@ -398,6 +458,11 @@ outfile <- glue::glue(
   "images/{map}/{map}_temp-prec_{pal}_z{z}_3d.png"
 )
 
+# Create output directory if required
+if (!dir.exists(dirname(outfile))) {
+  dir.create(dirname(outfile), recursive = TRUE)
+}
+
 # Save key parameters for reproducibility
 # These objects can be reused later 
 saveRDS(
@@ -416,7 +481,7 @@ saveRDS(
 {
   # Validate output path by writing a temporary test image
   # Ensures that directory structure exists and is writable
-  if(!file.exists(outfile)) {
+  if (!file.exists(outfile)) {
     png::writePNG(matrix(1), outfile)
   }
   
