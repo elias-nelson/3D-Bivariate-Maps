@@ -73,15 +73,6 @@ ids <- c(1, 12)
 #   id   - CHELSA bioclimatic variable ID
 #   path - directory where files will be saved
 
-# download_chelsa_data <- function(id, path) {
-#   rchelsa::get_chelsea_data(
-#     categ = "clim",   # Climate data category
-#     type  = "bio",    # Bioclimatic variables
-#     id    = id,       # Variable ID (BIO1, BIO12, etc.)
-#     path  = path      # Output directory
-#   )
-# }
-
 download_chelsa_data <- function(id, path) {
   
   expected_file <- file.path(
@@ -181,15 +172,19 @@ country_sf <- geodata::gadm(
 ) |>
   sf::st_as_sf()
 
-# Extract country centroid coordinates
-country_cent <- st_centroid(country_sf) |>
-  st_transform(crs = 4326)
-#' 
+# Calculate geographic centroid of the national boundary
+country_cent <- country_sf |>
+  sf::st_centroid() |>
+  sf::st_transform(4326)
+
+# Extract centroid longitude and latitude coordinates 
 c <- country_cent |>
   mutate(long = unlist(map(country_cent$geometry, 1)),
          lat = unlist(map(country_cent$geometry, 2))) |>
   as_tibble()
-#' 
+
+# Coordinate vector in the format:
+# c(longitude, latitude) 
 coords <- c(c[[1, "long"]], c[[1, "lat"]])
 
 # iv. Crop, Extract Elevation, and Resample Climate Data
