@@ -56,7 +56,7 @@ ids <- c(1, 12)
 # Arguments:
 #   id   - CHELSA bioclimatic variable ID
 #   path - directory where files will be saved
-download_chelsa_data <- function(id, path){
+download_chelsa_data <- function(id, path) {
   rchelsa::get_chelsea_data(
     categ = "clim",   # Climate data category
     type  = "bio",    # Bioclimatic variables
