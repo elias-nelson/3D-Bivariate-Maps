@@ -4,6 +4,10 @@
 This repository contains my 3D bivariate visualisations and accompanying code
 using the [`rayshader`](https://www.rayshader.com/) <img src="https://www.r-project.org/logo/Rlogo.svg" alt="R" style="height:1em; vertical-align:-0.1em;"> package by [Tyler Morgan-Wall](https://twitter.com/tylermorganwall).
 
+## Repo Structure
+
+
+## Workflow
 
 <details open><summary><b>Bivariate Maps</b></summary>
 
